@@ -22,22 +22,48 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }} # default is a pseudo 'merge' commit
 
+      - name: Prepare cache
+        id: cache
+        run: |
+          echo "GOCACHE=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+          echo "GOMODCACHE=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+          echo "GOVERSION=$(go env GOVERSION)" >> $GITHUB_OUTPUT
+          mkdir -p $(go env GOCACHE) || true
+          mkdir -p $(go env GOMODCACHE) || true
+
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.cache.outputs.GOCACHE }}
+            ${{ steps.cache.outputs.GOMODCACHE }}
+          key: test.1-${{ runner.os }}-${{ steps.cache.outputs.GOVERSION }}-${{ hashFiles('**/go.mod') }}
+          restore-keys: |
+            test.1-${{ runner.os }}-${{ steps.cache.outputs.GOVERSION }}-${{ hashFiles('**/go.mod') }}
+            test.1-${{ runner.os }}-${{ steps.cache.outputs.GOVERSION }}-
+            test.1-${{ runner.os }}-
+
       - name: Install tools
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@latest
           go install mvdan.cc/gofumpt@latest
+          go install github.com/mgechev/revive@latest
 
-      - name: gofmt
+      - name: Run gofmt
+        if: matrix.platform != 'windows-latest' # :<
         run: diff <(gofmt -d . 2>/dev/null) <(printf '')
 
-      - name: go vet
+      - name: Run go vet
         run: go vet ./...
 
-      - name: staticcheck
+      - name: Run staticcheck
         run: staticcheck ./...
 
-      - name: gofumpt
-        run: diff <(gofumpt -d -e -l . 2>/dev/null) <(printf '')
+      - name: Run gofumpt
+        run: gofumpt -d -e -l .
 
-      - name: go test
-        run: go test -v ./...
+      - name: Run revive
+        run: revive --set_exit_status --config="./.revive.toml" --exclude="./_examples/..." ./...
+
+      - name: Run go test
+        run: go test -v -race ./...
