@@ -331,7 +331,6 @@ func BenchmarkRingBufferParallel(b *testing.B) {
 			b.Run(fmt.Sprintf("cap=%d/par=%d", cap, par), func(b *testing.B) {
 				rb := rb.NewRingBuffer[int](cap)
 				b.SetParallelism(par)
-
 				b.RunParallel(func(p *testing.PB) {
 					for p.Next() {
 						rb.Add(123)
@@ -376,12 +375,10 @@ func BenchmarkCopyTake(b *testing.B) {
 					})
 
 					b.Run("Take", func(b *testing.B) {
-						var dst []int
-						_ = dst
 						b.ResetTimer()
 						b.ReportAllocs()
 						for b.Loop() {
-							dst, _ = rb.Take(sz)
+							rb.Take(sz)
 						}
 					})
 

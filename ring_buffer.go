@@ -9,10 +9,10 @@ import (
 //
 // It's safe for concurrent use by multiple goroutines.
 type RingBuffer[T any] struct {
-	mtx sync.Mutex
-	buf []T // fully allocated at construction
-	cur int // index for next write, walk backwards to read
-	len int // count of actual values
+	mtx sync.Mutex // explicitly not RWMutex, to avoid starving writers (Add)
+	buf []T        // fully allocated at construction
+	cur int        // index for next write, walk backwards to read
+	len int        // count of actual values
 }
 
 // NewRingBuffer returns an empty ring buffer of values of type T, with a
@@ -130,7 +130,7 @@ func (rb *RingBuffer[T]) Add(val T) (dropped T, ok bool) {
 
 // Walk calls the given function for each value in the ring buffer, starting
 // with the most recent value, and ending with the oldest value. Walk takes an
-// exclusive lock on the ring buffer, which blocks other calls like Add.
+// exclusive lock on the ring buffer, which blocks other calls, including Add.
 func (rb *RingBuffer[T]) Walk(fn func(T) error) error {
 	rb.mtx.Lock()
 	defer rb.mtx.Unlock()
