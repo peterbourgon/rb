@@ -1,4 +1,4 @@
-# rb [![Go Reference](https://pkg.go.dev/badge/github.com/peterbourgon/rb.svg)](https://pkg.go.dev/github.com/peterbourgon/rb) ![Latest Release](https://img.shields.io/github/v/release/peterbourgon/rb?style=flat-square) [![Build Status](https://github.com/peterbourgon/rb/actions/workflows/test.yaml/badge.svg)](https://github.com/peterbourgon/rb/actions/workflows/test.yaml)
+# rb [![Go Reference](https://pkg.go.dev/badge/github.com/peterbourgon/rb.svg)](https://pkg.go.dev/github.com/peterbourgon/rb) ![GitHub Release](https://img.shields.io/github/v/release/peterbourgon/rb?style=flat-square) [![Build Status](https://github.com/peterbourgon/rb/actions/workflows/test.yaml/badge.svg)](https://github.com/peterbourgon/rb/actions/workflows/test.yaml)
 
 An in-memory ring buffer, focusing on high-throughput write-heavy workloads.
 
