@@ -364,7 +364,6 @@ func BenchmarkCopyTake(b *testing.B) {
 
 			for _, sz := range tc.sizes {
 				b.Run(fmt.Sprintf("sz=%d", sz), func(b *testing.B) {
-
 					b.Run("Copy", func(b *testing.B) {
 						dst := make([]int, sz)
 						b.ResetTimer()
@@ -381,7 +380,6 @@ func BenchmarkCopyTake(b *testing.B) {
 							rb.Take(sz)
 						}
 					})
-
 				})
 			}
 		})
