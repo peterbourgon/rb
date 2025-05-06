@@ -197,7 +197,7 @@ func (rb *RingBuffer[T]) Overview() (newest, oldest T, count int) {
 		headidx += len(rb.buf)
 	}
 
-	// The read tail is len+1 values back from the read head.
+	// The read tail is len-1 values back from the read head.
 	// If the buffer is full, this is the write cursor.
 	tailidx := headidx - rb.len + 1
 	if tailidx < 0 {
