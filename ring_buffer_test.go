@@ -263,25 +263,28 @@ func TestRingBufferResize(t *testing.T) {
 
 	assertEqual(t, top(3), []int{7, 6, 5})
 	assertEqual(t, top(10), []int{7, 6, 5, 4})
+
+	assertEqual(t, 0, len(rb.Resize(0)))
+	assertEqual(t, 0, len(rb.Resize(-1)))
 }
 
 func BenchmarkRingBuffer(b *testing.B) {
-	for _, cap := range []int{100, 1_000, 10_000, 100_000, 1_000_000} {
-		b.Run(fmt.Sprintf("cap=%d", cap), func(b *testing.B) {
-			rb := rb.NewRingBuffer[int](cap)
-			for i := range cap {
+	for _, sz := range []int{100, 1_000, 10_000, 100_000, 1_000_000} {
+		b.Run(fmt.Sprintf("sz=%d", sz), func(b *testing.B) {
+			rb := rb.NewRingBuffer[int](sz)
+			for i := range sz {
 				rb.Add(int(i))
 			}
 
-			var captured int
-			_ = captured
+			var sztured int
+			_ = sztured
 
 			walkOnlyFn := func(int) error {
 				return nil
 			}
 
 			walkReadFn := func(i int) error {
-				captured = i
+				sztured = i
 				return nil
 			}
 
@@ -322,50 +325,51 @@ func BenchmarkRingBuffer(b *testing.B) {
 	}
 }
 
-func BenchmarkRingBufferParallel(b *testing.B) {
+func BenchmarkRingBufferParallelAddWalk(b *testing.B) {
 	walkFn := func(int) error { return nil }
 	_ = walkFn
-
-	for _, cap := range []int{100, 1000, 10000} {
-		for _, par := range []int{10, 100, 1000} {
-			b.Run(fmt.Sprintf("cap=%d/par=%d", cap, par), func(b *testing.B) {
-				rb := rb.NewRingBuffer[int](cap)
-				b.SetParallelism(par)
-				b.RunParallel(func(p *testing.PB) {
-					for p.Next() {
-						rb.Add(123)
-						rb.Walk(walkFn)
-					}
+	for _, sz := range []int{100, 1000, 10000} {
+		b.Run(fmt.Sprintf("sz=%d", sz), func(b *testing.B) {
+			for _, par := range []int{10, 100, 1000} {
+				rb := rb.NewRingBuffer[int](sz)
+				b.Run(fmt.Sprintf("par=%d", par), func(b *testing.B) {
+					b.SetParallelism(par)
+					b.RunParallel(func(p *testing.PB) {
+						for p.Next() {
+							rb.Add(123)
+							rb.Walk(walkFn)
+						}
+					})
 				})
-			})
-		}
+			}
+		})
 	}
 }
 
 func BenchmarkCopyTake(b *testing.B) {
 	for _, tc := range []struct {
-		cap   int
-		sizes []int
+		sz   int
+		dsts []int
 	}{
 		{
-			cap:   1_000,
-			sizes: []int{1, 10, 100, 1000, 10000},
+			sz:   1_000,
+			dsts: []int{1, 10, 100, 1000, 10000},
 		},
 		{
-			cap:   100_000,
-			sizes: []int{1, 10, 100, 1000, 10000},
+			sz:   100_000,
+			dsts: []int{1, 10, 100, 1000, 10000},
 		},
 	} {
-		b.Run(fmt.Sprintf("cap=%d", tc.cap), func(b *testing.B) {
-			rb := rb.NewRingBuffer[int](tc.cap)
-			for i := range tc.cap {
+		b.Run(fmt.Sprintf("sz=%d", tc.sz), func(b *testing.B) {
+			rb := rb.NewRingBuffer[int](tc.sz)
+			for i := range tc.sz {
 				rb.Add(int(i))
 			}
 
-			for _, sz := range tc.sizes {
-				b.Run(fmt.Sprintf("sz=%d", sz), func(b *testing.B) {
+			for _, n := range tc.dsts {
+				b.Run(fmt.Sprintf("n=%d", n), func(b *testing.B) {
 					b.Run("Copy", func(b *testing.B) {
-						dst := make([]int, sz)
+						dst := make([]int, n)
 						b.ResetTimer()
 						b.ReportAllocs()
 						for b.Loop() {
@@ -377,7 +381,7 @@ func BenchmarkCopyTake(b *testing.B) {
 						b.ResetTimer()
 						b.ReportAllocs()
 						for b.Loop() {
-							rb.Take(sz)
+							rb.Take(n)
 						}
 					})
 				})

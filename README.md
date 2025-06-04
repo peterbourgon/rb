@@ -1,8 +1,8 @@
 # rb [![Go Reference](https://pkg.go.dev/badge/github.com/peterbourgon/rb.svg)](https://pkg.go.dev/github.com/peterbourgon/rb) [![GitHub Release](https://img.shields.io/github/v/release/peterbourgon/rb?style=flat-square)](https://github.com/peterbourgon/rb/releases) [![Build Status](https://github.com/peterbourgon/rb/actions/workflows/test.yaml/badge.svg)](https://github.com/peterbourgon/rb/actions/workflows/test.yaml)
 
-An in-memory ring buffer, focusing on high-throughput write-heavy workloads.
+In-memory ring buffer optimized for high-throughput write-heavy workloads.
 
-Buffers are fully allocated at construction, so adding elements is zero-alloc and reasonably fast.
+Buffers are fully allocated during construction, so adds are zero-alloc and reasonably fast.
 
 ```
 goos: darwin
