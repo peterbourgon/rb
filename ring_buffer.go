@@ -44,7 +44,7 @@ func (rb *RingBuffer[T]) Resize(sz int) (dropped []T) {
 	// Calculate the read cursor for the old buffer.
 	rdcur := rb.cur - 1
 	if rdcur < 0 {
-		rdcur += rb.len
+		rdcur += len(rb.buf)
 	}
 
 	// Construct the new buffer with the given size. As fill is guaranteed to be
