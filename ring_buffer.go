@@ -2,6 +2,7 @@ package rb
 
 import (
 	"io"
+	"iter"
 	"sync"
 )
 
@@ -36,10 +37,7 @@ func (rb *RingBuffer[T]) Resize(sz int) (dropped []T) {
 	defer rb.mtx.Unlock()
 
 	// Calculate how many values to fill from the old buffer to the new one.
-	fill := rb.len
-	if fill > sz {
-		fill = sz
-	}
+	fill := min(rb.len, sz)
 
 	// Calculate the read cursor for the old buffer.
 	rdcur := rb.cur - 1
@@ -132,26 +130,36 @@ func (rb *RingBuffer[T]) Add(val T) (dropped T, ok bool) {
 // with the most recent value, and ending with the oldest value. Walk takes an
 // exclusive lock on the ring buffer, which blocks other calls, including Add.
 func (rb *RingBuffer[T]) Walk(fn func(T) error) error {
-	rb.mtx.Lock()
-	defer rb.mtx.Unlock()
-
-	// Read up to rb.len values.
-	for i := range rb.len {
-		// Reads go backwards from one before the write cursor.
-		cur := rb.cur - 1 - i
-
-		// Wrap around when necessary.
-		if cur < 0 {
-			cur += len(rb.buf)
-		}
-
-		// If the function returns an error, we're done.
-		if err := fn(rb.buf[cur]); err != nil {
+	for val := range rb.All() {
+		if err := fn(val); err != nil {
 			return err
 		}
 	}
-
 	return nil
+}
+
+// All returns an iterator over the values in the ring buffer, starting with the
+// most recent value, and ending with the oldest value. It takes an exclusive
+// lock on the ring buffer for the duration of the iteration, which blocks other
+// calls, including Add. The iterator can be stopped early by breaking from the
+// range loop.
+func (rb *RingBuffer[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		rb.mtx.Lock()
+		defer rb.mtx.Unlock()
+
+		for i := range rb.len {
+			cur := rb.cur - 1 - i
+
+			if cur < 0 {
+				cur += len(rb.buf)
+			}
+
+			if !yield(rb.buf[cur]) {
+				return
+			}
+		}
+	}
 }
 
 // Overview returns the newest and oldest values in the ring buffer, as well as

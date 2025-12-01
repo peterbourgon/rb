@@ -82,6 +82,113 @@ func TestRingBuffer(t *testing.T) {
 	assertEqual(t, top(99), []int{6, 5, 4})
 }
 
+func TestRingBufferIter(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty buffer", func(t *testing.T) {
+		rb := rb.NewRingBuffer[int](3)
+		var result []int
+		for val := range rb.All() {
+			result = append(result, val)
+		}
+		if result == nil {
+			result = []int{}
+		}
+		assertEqual(t, len(result), 0)
+	})
+
+	t.Run("partial buffer", func(t *testing.T) {
+		rb := rb.NewRingBuffer[int](5)
+		rb.Add(1)
+		rb.Add(2)
+		rb.Add(3)
+
+		var result []int
+		for val := range rb.All() {
+			result = append(result, val)
+		}
+
+		assertEqual(t, result, []int{3, 2, 1})
+	})
+
+	t.Run("full buffer", func(t *testing.T) {
+		rb := rb.NewRingBuffer[int](3)
+		rb.Add(1)
+		rb.Add(2)
+		rb.Add(3)
+
+		var result []int
+		for val := range rb.All() {
+			result = append(result, val)
+		}
+
+		assertEqual(t, result, []int{3, 2, 1})
+	})
+
+	t.Run("wrapped buffer", func(t *testing.T) {
+		rb := rb.NewRingBuffer[int](3)
+		rb.Add(1)
+		rb.Add(2)
+		rb.Add(3)
+		rb.Add(4)
+		rb.Add(5)
+
+		var result []int
+		for val := range rb.All() {
+			result = append(result, val)
+		}
+
+		assertEqual(t, result, []int{5, 4, 3})
+	})
+
+	t.Run("early termination", func(t *testing.T) {
+		rb := rb.NewRingBuffer[int](5)
+		rb.Add(1)
+		rb.Add(2)
+		rb.Add(3)
+		rb.Add(4)
+		rb.Add(5)
+
+		var result []int
+		for val := range rb.All() {
+			result = append(result, val)
+			if val == 3 {
+				break
+			}
+		}
+
+		assertEqual(t, result, []int{5, 4, 3})
+
+		rb.Add(6)
+
+		result = []int{}
+		for val := range rb.All() {
+			result = append(result, val)
+		}
+		assertEqual(t, result, []int{6, 5, 4, 3, 2})
+	})
+
+	t.Run("matches Walk", func(t *testing.T) {
+		rb := rb.NewRingBuffer[int](10)
+		for i := range 15 {
+			rb.Add(i)
+		}
+
+		var iterResult []int
+		for val := range rb.All() {
+			iterResult = append(iterResult, val)
+		}
+
+		var walkResult []int
+		rb.Walk(func(val int) error {
+			walkResult = append(walkResult, val)
+			return nil
+		})
+
+		assertEqual(t, iterResult, walkResult)
+	})
+}
+
 func TestRingBufferCopyTake(t *testing.T) {
 	rb := rb.NewRingBuffer[int](32)
 	rb.Add(1)
