@@ -1,6 +1,9 @@
 package rb
 
-import "sync"
+import (
+	"maps"
+	"sync"
+)
 
 // RingBuffers collects ring buffers by string category.
 type RingBuffers[T any] struct {
@@ -39,9 +42,7 @@ func (rbs *RingBuffers[T]) GetAll() map[string]*RingBuffer[T] {
 	defer rbs.mtx.Unlock()
 
 	all := make(map[string]*RingBuffer[T], len(rbs.bufs))
-	for name, rb := range rbs.bufs {
-		all[name] = rb
-	}
+	maps.Copy(all, rbs.bufs)
 
 	return all
 }

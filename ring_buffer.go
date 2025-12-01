@@ -37,10 +37,7 @@ func (rb *RingBuffer[T]) Resize(sz int) (dropped []T) {
 	defer rb.mtx.Unlock()
 
 	// Calculate how many values to fill from the old buffer to the new one.
-	fill := rb.len
-	if fill > sz {
-		fill = sz
-	}
+	fill := min(rb.len, sz)
 
 	// Calculate the read cursor for the old buffer.
 	rdcur := rb.cur - 1
