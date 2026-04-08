@@ -41,3 +41,28 @@ func TestRingBuffersBasics(t *testing.T) {
 	assertEqual(t, []int{123}, dropped["foo"])
 	assertEqual(t, []int{4, 3, 2, 1}, dropped["bar"])
 }
+
+func TestRingBuffersClear(t *testing.T) {
+	t.Parallel()
+
+	rbs := rb.NewRingBuffers[int](5)
+
+	foo := rbs.GetOrCreate("foo")
+	foo.Add(1)
+	foo.Add(2)
+	foo.Add(3)
+
+	bar := rbs.GetOrCreate("bar")
+	bar.Add(10)
+	bar.Add(20)
+
+	dropped := rbs.Clear()
+	assertEqual(t, 2, len(dropped))
+	assertEqual(t, []int{3, 2, 1}, dropped["foo"])
+	assertEqual(t, []int{20, 10}, dropped["bar"])
+
+	// Buffers should be empty after clear.
+	var have []int
+	foo.Walk(func(i int) error { have = append(have, i); return nil })
+	assertEqual(t, ([]int)(nil), have)
+}

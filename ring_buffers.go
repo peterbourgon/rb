@@ -67,3 +67,18 @@ func (rbs *RingBuffers[T]) Resize(sz int) (dropped map[string][]T) {
 
 	return dropped
 }
+
+// Clear drops all elements from every ring buffer in the set, returning dropped
+// values for each ring buffer by category. The ring buffers themselves are
+// retained with their existing capacity.
+func (rbs *RingBuffers[T]) Clear() map[string][]T {
+	rbs.mtx.Lock()
+	defer rbs.mtx.Unlock()
+
+	dropped := map[string][]T{}
+	for name, rb := range rbs.bufs {
+		dropped[name] = append(dropped[name], rb.Clear()...)
+	}
+
+	return dropped
+}

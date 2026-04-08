@@ -205,6 +205,32 @@ func (rb *RingBuffer[T]) Copy(dst []T) (int, error) {
 	return index, nil
 }
 
+// Clear drops all elements from the ring buffer, returning them newest first.
+// The capacity of the buffer is unchanged.
+func (rb *RingBuffer[T]) Clear() []T {
+	rb.mtx.Lock()
+	defer rb.mtx.Unlock()
+
+	dropped := make([]T, rb.len)
+	for i := range rb.len {
+		cur := rb.cur - 1 - i
+		if cur < 0 {
+			cur += len(rb.buf)
+		}
+		dropped[i] = rb.buf[cur]
+	}
+
+	var zero T
+	for i := range rb.buf {
+		rb.buf[i] = zero
+	}
+
+	rb.cur = 0
+	rb.len = 0
+
+	return dropped
+}
+
 // Take copies up to the n most recent values from the ring buffer into a newly
 // allocated slice, newest-to-oldest, and returns that slice. The ring buffer
 // isn't modified.

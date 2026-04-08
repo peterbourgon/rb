@@ -375,6 +375,35 @@ func TestRingBufferResize(t *testing.T) {
 	assertEqual(t, 0, len(rb.Resize(-1)))
 }
 
+func TestRingBufferClear(t *testing.T) {
+	t.Parallel()
+
+	rb := rb.NewRingBuffer[int](5)
+
+	// Clearing an empty buffer returns an empty slice.
+	dropped := rb.Clear()
+	assertEqual(t, []int{}, dropped)
+
+	rb.Add(1)
+	rb.Add(2)
+	rb.Add(3)
+
+	dropped = rb.Clear()
+	assertEqual(t, []int{3, 2, 1}, dropped)
+
+	// Buffer should be empty after clear.
+	vals, err := rb.Take(10)
+	assertEqual(t, error(nil), err)
+	assertEqual(t, []int{}, vals)
+
+	// Buffer should still be usable after clear.
+	rb.Add(10)
+	rb.Add(20)
+	vals, err = rb.Take(10)
+	assertEqual(t, error(nil), err)
+	assertEqual(t, []int{20, 10}, vals)
+}
+
 func BenchmarkRingBuffer(b *testing.B) {
 	for _, sz := range []int{100, 1_000, 10_000, 100_000, 1_000_000} {
 		b.Run(fmt.Sprintf("sz=%d", sz), func(b *testing.B) {
